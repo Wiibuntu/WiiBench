@@ -1,101 +1,215 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <vector>
-#include <chrono>
-#include <thread>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <cmath>
 
-// Function prototypes
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
-
-// Screen settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-
-// Camera settings
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-float deltaTime = 0.0f; // Time between current frame and last frame
-float lastFrame = 0.0f; // Time of last frame
-
-// Vertex shader source code
+// Vertex Shader Source
 const char* vertexShaderSource = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 aTexCoord;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec2 TexCoord;
-
-void main()
-{
+void main() {
     gl_Position = projection * view * model * vec4(aPos, 1.0);
-    TexCoord = aTexCoord;
 }
 )";
 
-// Fragment shader source code
+// Fragment Shader Source
 const char* fragmentShaderSource = R"(
 #version 330 core
 out vec4 FragColor;
 
-in vec2 TexCoord;
-
-// Placeholder texture
-uniform sampler2D texture1;
-
-void main()
-{
-    FragColor = texture(texture1, TexCoord);
+void main() {
+    FragColor = vec4(1.0, 0.5, 0.2, 1.0);
 }
 )";
 
+struct Shape {
+    std::vector<float> vertices;
+    std::vector<unsigned int> indices;
+};
+
+Shape createCube() {
+    return {
+        { // Vertices
+            -0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f,  0.5f, -0.5f,
+            -0.5f,  0.5f, -0.5f,
+            -0.5f, -0.5f,  0.5f,
+             0.5f, -0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
+        },
+        { // Indices
+            0, 1, 2, 2, 3, 0,
+            4, 5, 6, 6, 7, 4,
+            0, 1, 5, 5, 4, 0,
+            2, 3, 7, 7, 6, 2,
+            0, 3, 7, 7, 4, 0,
+            1, 2, 6, 6, 5, 1
+        }
+    };
+}
+
+Shape createPyramid() {
+    return {
+        { // Vertices
+            0.0f,  0.5f,  0.0f,
+           -0.5f, -0.5f,  0.5f,
+            0.5f, -0.5f,  0.5f,
+            0.5f, -0.5f, -0.5f,
+           -0.5f, -0.5f, -0.5f
+        },
+        { // Indices
+            0, 1, 2,
+            0, 2, 3,
+            0, 3, 4,
+            0, 4, 1,
+            1, 2, 3,
+            3, 4, 1
+        }
+    };
+}
+
+Shape createSphere() {
+    const int stacks = 20;
+    const int slices = 20;
+    const float radius = 0.5f;
+    std::vector<float> vertices;
+    std::vector<unsigned int> indices;
+
+    for (int i = 0; i <= stacks; ++i) {
+        float phi = i * M_PI / stacks;
+        for (int j = 0; j <= slices; ++j) {
+            float theta = j * 2 * M_PI / slices;
+            float x = radius * sin(phi) * cos(theta);
+            float y = radius * cos(phi);
+            float z = radius * sin(phi) * sin(theta);
+            vertices.push_back(x);
+            vertices.push_back(y);
+            vertices.push_back(z);
+        }
+    }
+
+    for (int i = 0; i < stacks; ++i) {
+        for (int j = 0; j < slices; ++j) {
+            int first = (i * (slices + 1)) + j;
+            int second = first + slices + 1;
+            indices.push_back(first);
+            indices.push_back(second);
+            indices.push_back(first + 1);
+            indices.push_back(second);
+            indices.push_back(second + 1);
+            indices.push_back(first + 1);
+        }
+    }
+
+    return {vertices, indices};
+}
+
+Shape createCylinder() {
+    const int segments = 20;
+    const float radius = 0.5f;
+    const float height = 1.0f;
+    std::vector<float> vertices;
+    std::vector<unsigned int> indices;
+
+    for (int i = 0; i <= segments; ++i) {
+        float theta = i * 2 * M_PI / segments;
+        float x = radius * cos(theta);
+        float z = radius * sin(theta);
+        vertices.push_back(x);
+        vertices.push_back(-height / 2);
+        vertices.push_back(z);
+        vertices.push_back(x);
+        vertices.push_back(height / 2);
+        vertices.push_back(z);
+    }
+
+    for (int i = 0; i < segments; ++i) {
+        int base = i * 2;
+        indices.push_back(base);
+        indices.push_back(base + 1);
+        indices.push_back(base + 2);
+        indices.push_back(base + 1);
+        indices.push_back(base + 3);
+        indices.push_back(base + 2);
+    }
+
+    return {vertices, indices};
+}
+
+Shape createCone() {
+    const int segments = 20;
+    const float radius = 0.5f;
+    const float height = 1.0f;
+    std::vector<float> vertices = {0.0f, height / 2, 0.0f};
+    std::vector<unsigned int> indices;
+
+    for (int i = 0; i <= segments; ++i) {
+        float theta = i * 2 * M_PI / segments;
+        float x = radius * cos(theta);
+        float z = radius * sin(theta);
+        vertices.push_back(x);
+        vertices.push_back(-height / 2);
+        vertices.push_back(z);
+    }
+
+    for (int i = 1; i <= segments; ++i) {
+        indices.push_back(0);
+        indices.push_back(i);
+        indices.push_back(i + 1);
+    }
+
+    return {vertices, indices};
+}
+
+void processInput(GLFWwindow* window) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+}
+
+void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+    // Implement camera rotation logic
+}
+
 int main() {
-    // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
 
-    // Configure GLFW
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    // Create a windowed mode window and its OpenGL context
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "3D Graphics Test", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Shape Selector", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // Load OpenGL functions using GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
+    glfwMakeContextCurrent(window);
+    glfwSetCursorPosCallback(window, mouseCallback);
+
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW" << std::endl;
         return -1;
     }
 
-    // Compile shaders and link program
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glEnable(GL_DEPTH_TEST);
+
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
 
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
-    unsigned int shaderProgram = glCreateProgram();
+    GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
@@ -103,107 +217,29 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Define a cube with texture coordinates
-    float vertices[] = {
-        // Positions          // Texture Coords
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+    std::vector<Shape> shapes = {createCube(), createPyramid(), createSphere(), createCylinder(), createCone()};
+    int currentShapeIndex = 0;
 
-        // (Add more vertices for the remaining sides of the cube)
-    };
-
-    // Generate a buffer and array object
-    unsigned int VBO, VAO;
+    GLuint VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // Texture coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Load textures (placeholder)
-    unsigned int texture1;
-    glGenTextures(1, &texture1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    // Set the texture wrapping and filtering options
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // Generate a simple texture
-    unsigned char placeholderTexture[3] = { 255, 0, 0 }; // Red color
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, placeholderTexture);
-
-    // Main loop
     while (!glfwWindowShouldClose(window)) {
-        // Calculate delta time
-        float currentFrame = glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
-        // Process input
         processInput(window);
 
-        // Render
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Use shader program
         glUseProgram(shaderProgram);
 
-        // Create transformations
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        Shape currentShape = shapes[currentShapeIndex];
 
-        unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-        // Bind textures and draw
-        glBindTexture(GL_TEXTURE_2D, texture1);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, currentShape.vertices.size() * sizeof(float), currentShape.vertices.data(), GL_STATIC_DRAW);
 
-        // Swap buffers and poll IO events
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, currentShape.indices.size() * sizeof(unsigned int), currentShape.indices.data(), GL_STATIC_DRAW);
 
-    // Clean up
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-    glfwTerminate();
-    return 0;
-}
-
-// Process input
-void processInput(GLFWwindow* window) {
-    const float cameraSpeed = 2.5f * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-}
-
-// GLFW callback for resizing
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
