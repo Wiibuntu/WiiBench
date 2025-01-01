@@ -1,2 +1,3 @@
 #!/bin/bash
-g++ -o WiiBench benchmark.cpp -lglfw -lGL -lGLEW
+g++ benchmark.cpp -o WiiBench -lglfw -lGL -ldl -pthread
+
