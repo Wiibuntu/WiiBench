@@ -4,7 +4,7 @@
 
 # Compile
 
-sudo apt install libglfw3-dev libglew-dev
+sudo apt-get install libglfw3-dev libglm-dev
 
 sudo chmod +x Compile_Test.sh
 
