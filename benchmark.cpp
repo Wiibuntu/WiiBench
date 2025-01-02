@@ -225,7 +225,7 @@ int main() {
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
 
-    while (!glfwWindowShouldClose(window)) {
+     while (!glfwWindowShouldClose(window)) {
         processInput(window);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -242,4 +242,6 @@ int main() {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, currentShape.indices.size() * sizeof(unsigned int), currentShape.indices.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    return 0; }
 
