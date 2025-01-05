@@ -1,4 +1,4 @@
-#include "glut.h"
+#include <GL/glut.h>
 #include <math.h>
 
 float angle = 0.0f;
