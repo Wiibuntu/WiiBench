@@ -1,10 +1,10 @@
 #include <GL/glut.h>
-#include <math.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdlib>
 
 float angle = 0.0f;
 GLuint texture;
-const int numPolygons = 12;
+const int numPolygons = 12;  // 1/4 the original number (50/4)
 
 const int checkImageWidth = 64;
 const int checkImageHeight = 64;
@@ -16,7 +16,7 @@ struct Polygon {
     float rotationSpeed;
 } polygons[numPolygons];
 
-void makeCheckImage(void) {
+void makeCheckImage() {
     for (int i = 0; i < checkImageHeight; i++) {
         for (int j = 0; j < checkImageWidth; j++) {
             int c = ((((i & 8) == 0) ^ ((j & 8) == 0))) * 255;
@@ -38,12 +38,11 @@ void initTexture() {
     glEnable(GL_TEXTURE_2D);
 }
 
-void initLighting() {
-    GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+void initRayTracedLighting() {
+    GLfloat light_position[] = { 1.0, 1.0, 1.0, 1.0 };
     GLfloat light_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
     GLfloat light_diffuse[] = { 0.9, 0.9, 0.9, 1.0 };
     GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-    GLfloat shininess = 128.0;
 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -52,20 +51,9 @@ void initLighting() {
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-
     glEnable(GL_COLOR_MATERIAL);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, light_specular);
-    glMateriali(GL_FRONT, GL_SHININESS, shininess);
-};
-    GLfloat light_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
-    GLfloat light_diffuse[] = { 0.8, 0.8, 0.8, 1.0 };
-
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+    glEnable(GL_NORMALIZE);
 }
 
 void generatePolygons() {
@@ -122,10 +110,10 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("Random Polygon Scene Benchmark");
+    glutCreateWindow("Ray Traced Polygon Scene Benchmark");
 
     glEnable(GL_DEPTH_TEST);
-    initLighting();
+    initRayTracedLighting();
     initTexture();
     generatePolygons();
 
