@@ -4,6 +4,7 @@
 #include <vector>
 
 float angle = 0.0f;
+float lightAngle = 0.0f;
 GLuint texture;
 const int worldSize = 50;
 float terrain[worldSize][worldSize];
@@ -48,21 +49,16 @@ void initTexture() {
 }
 
 void initRayTracedLighting() {
-    GLfloat light_position[] = { 1.0, 1.0, 1.0, 1.0 };
-    GLfloat light_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
-    GLfloat light_diffuse[] = { 0.9, 0.9, 0.9, 1.0 };
-    GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_NORMALIZE);
+}
+
+void updateLightPosition() {
+    GLfloat light_position[] = { 10.0f * sin(lightAngle), 10.0f, 10.0f * cos(lightAngle), 1.0f };
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 }
 
 void drawBlock(float x, float y, float z) {
@@ -88,6 +84,8 @@ void display() {
     glTranslatef(0.0f, -10.0f, -50.0f);
     glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
+    updateLightPosition();
+    
     glBindTexture(GL_TEXTURE_2D, texture);
     drawTerrain();
 
@@ -98,6 +96,11 @@ void update(int value) {
     angle += 1.0f;
     if (angle > 360) {
         angle -= 360;
+    }
+
+    lightAngle += 0.01f;
+    if (lightAngle > 2 * M_PI) {
+        lightAngle -= 2 * M_PI;
     }
 
     glutPostRedisplay();
@@ -116,7 +119,7 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("Minecraft-Style Terrain with Perlin Noise");
+    glutCreateWindow("Minecraft-Style Terrain with Rotating Light and Perlin Noise");
 
     glEnable(GL_DEPTH_TEST);
     initRayTracedLighting();
