@@ -1,14 +1,20 @@
 #include <GL/glut.h>
 #include <math.h>
+#include <stdlib.h>
 
 float angle = 0.0f;
-float spherePosX = 0.0f, spherePosY = 0.0f;
-float sphereSpeedX = 0.03f, sphereSpeedY = 0.02f;
 GLuint texture;
+const int numPolygons = 50;
 
 const int checkImageWidth = 64;
 const int checkImageHeight = 64;
 GLubyte checkImage[checkImageHeight][checkImageWidth][4];
+
+struct Polygon {
+    float x, y, z;
+    float size;
+    float rotationSpeed;
+} polygons[numPolygons];
 
 void makeCheckImage(void) {
     for (int i = 0; i < checkImageHeight; i++) {
@@ -45,23 +51,35 @@ void initLighting() {
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 }
 
-void drawSphere() {
-    GLUquadric* quadric = gluNewQuadric();
-    gluQuadricTexture(quadric, GL_TRUE);
-    gluSphere(quadric, 1.0, 64, 64);
-    gluDeleteQuadric(quadric);
+void generatePolygons() {
+    for (int i = 0; i < numPolygons; i++) {
+        polygons[i].x = ((float)rand() / RAND_MAX) * 4.0f - 2.0f;
+        polygons[i].y = ((float)rand() / RAND_MAX) * 4.0f - 2.0f;
+        polygons[i].z = ((float)rand() / RAND_MAX) * -10.0f - 5.0f;
+        polygons[i].size = ((float)rand() / RAND_MAX) * 1.0f + 0.5f;
+        polygons[i].rotationSpeed = ((float)rand() / RAND_MAX) * 5.0f;
+    }
+}
+
+void drawPolygon(float size) {
+    glutSolidDodecahedron();
 }
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
     
-    glTranslatef(spherePosX, spherePosY, -5.0f);
-    glRotatef(angle, 1.0f, 1.0f, 1.0f);
-    
     glBindTexture(GL_TEXTURE_2D, texture);
-    drawSphere();
-
+    
+    for (int i = 0; i < numPolygons; i++) {
+        glPushMatrix();
+        glTranslatef(polygons[i].x, polygons[i].y, polygons[i].z);
+        glRotatef(angle * polygons[i].rotationSpeed, 1.0f, 1.0f, 1.0f);
+        glScalef(polygons[i].size, polygons[i].size, polygons[i].size);
+        drawPolygon(polygons[i].size);
+        glPopMatrix();
+    }
+    
     glutSwapBuffers();
 }
 
@@ -69,16 +87,6 @@ void update(int value) {
     angle += 2.0f;
     if (angle > 360) {
         angle -= 360;
-    }
-    
-    spherePosX += sphereSpeedX;
-    spherePosY += sphereSpeedY;
-    
-    if (spherePosX > 2.0f || spherePosX < -2.0f) {
-        sphereSpeedX = -sphereSpeedX;
-    }
-    if (spherePosY > 2.0f || spherePosY < -2.0f) {
-        sphereSpeedY = -sphereSpeedY;
     }
 
     glutPostRedisplay();
@@ -97,11 +105,12 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("Sphere Benchmark with Checkerboard Texture");
+    glutCreateWindow("Random Polygon Scene Benchmark");
 
     glEnable(GL_DEPTH_TEST);
     initLighting();
     initTexture();
+    generatePolygons();
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
