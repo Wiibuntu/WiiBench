@@ -4,7 +4,7 @@
 
 float angle = 0.0f;
 GLuint texture;
-const int numPolygons = 50;
+const int numPolygons = 12;
 
 const int checkImageWidth = 64;
 const int checkImageHeight = 64;
@@ -40,6 +40,23 @@ void initTexture() {
 
 void initLighting() {
     GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+    GLfloat light_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
+    GLfloat light_diffuse[] = { 0.9, 0.9, 0.9, 1.0 };
+    GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+    GLfloat shininess = 128.0;
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+
+    glEnable(GL_COLOR_MATERIAL);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, light_specular);
+    glMateriali(GL_FRONT, GL_SHININESS, shininess);
+};
     GLfloat light_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
     GLfloat light_diffuse[] = { 0.8, 0.8, 0.8, 1.0 };
 
