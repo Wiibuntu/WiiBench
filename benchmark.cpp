@@ -1,19 +1,29 @@
 #include <GL/glut.h>
 #include <cmath>
 #include <cstdlib>
+#include <vector>
 
 float angle = 0.0f;
 GLuint texture;
-
-const int treeSegments = 5;
-const float trunkHeight = 2.0f;
-const float trunkRadius = 0.2f;
-const float foliageRadius = 1.0f;
-const float foliageHeight = 1.5f;
+const int worldSize = 50;
+float terrain[worldSize][worldSize];
 
 const int checkImageWidth = 64;
 const int checkImageHeight = 64;
 GLubyte checkImage[checkImageHeight][checkImageWidth][4];
+
+float perlinNoise(int x, int y) {
+    float scale = 0.1f;
+    return (float)(sin(x * scale) * cos(y * scale) * 10);
+}
+
+void generateTerrain() {
+    for (int x = 0; x < worldSize; x++) {
+        for (int y = 0; y < worldSize; y++) {
+            terrain[x][y] = perlinNoise(x, y);
+        }
+    }
+}
 
 void makeCheckImage() {
     for (int i = 0; i < checkImageHeight; i++) {
@@ -55,35 +65,32 @@ void initRayTracedLighting() {
     glEnable(GL_NORMALIZE);
 }
 
-void drawTree() {
-    // Draw trunk
-    GLUquadric* quad = gluNewQuadric();
+void drawBlock(float x, float y, float z) {
     glPushMatrix();
-    glTranslatef(0.0f, -trunkHeight / 2.0f, 0.0f);
-    gluCylinder(quad, trunkRadius, trunkRadius, trunkHeight, 30, 30);
+    glTranslatef(x, y, z);
+    glutSolidCube(1.0f);
     glPopMatrix();
+}
 
-    // Draw foliage (stack of cones)
-    for (int i = 0; i < treeSegments; i++) {
-        glPushMatrix();
-        glTranslatef(0.0f, trunkHeight + i * foliageHeight / 2.5f, 0.0f);
-        glutSolidCone(foliageRadius - i * 0.2f, foliageHeight, 30, 30);
-        glPopMatrix();
+void drawTerrain() {
+    for (int x = 0; x < worldSize; x++) {
+        for (int y = 0; y < worldSize; y++) {
+            float height = terrain[x][y];
+            drawBlock(x - worldSize / 2, height, y - worldSize / 2);
+        }
     }
-
-    gluDeleteQuadric(quad);
 }
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    glTranslatef(0.0f, -1.0f, -6.0f);
+    glTranslatef(0.0f, -10.0f, -50.0f);
     glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
     glBindTexture(GL_TEXTURE_2D, texture);
-    drawTree();
-    
+    drawTerrain();
+
     glutSwapBuffers();
 }
 
@@ -109,11 +116,12 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("Rotating High Poly Tree with Ray Traced Lighting");
+    glutCreateWindow("Minecraft-Style Terrain with Perlin Noise");
 
     glEnable(GL_DEPTH_TEST);
     initRayTracedLighting();
     initTexture();
+    generateTerrain();
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
