@@ -4,17 +4,16 @@
 
 float angle = 0.0f;
 GLuint texture;
-const int numPolygons = 12;  // 1/4 the original number (50/4)
+
+const int treeSegments = 5;
+const float trunkHeight = 2.0f;
+const float trunkRadius = 0.2f;
+const float foliageRadius = 1.0f;
+const float foliageHeight = 1.5f;
 
 const int checkImageWidth = 64;
 const int checkImageHeight = 64;
 GLubyte checkImage[checkImageHeight][checkImageWidth][4];
-
-struct Polygon {
-    float x, y, z;
-    float size;
-    float rotationSpeed;
-} polygons[numPolygons];
 
 void makeCheckImage() {
     for (int i = 0; i < checkImageHeight; i++) {
@@ -56,40 +55,40 @@ void initRayTracedLighting() {
     glEnable(GL_NORMALIZE);
 }
 
-void generatePolygons() {
-    for (int i = 0; i < numPolygons; i++) {
-        polygons[i].x = ((float)rand() / RAND_MAX) * 4.0f - 2.0f;
-        polygons[i].y = ((float)rand() / RAND_MAX) * 4.0f - 2.0f;
-        polygons[i].z = ((float)rand() / RAND_MAX) * -10.0f - 5.0f;
-        polygons[i].size = ((float)rand() / RAND_MAX) * 1.0f + 0.5f;
-        polygons[i].rotationSpeed = ((float)rand() / RAND_MAX) * 5.0f;
-    }
-}
+void drawTree() {
+    // Draw trunk
+    GLUquadric* quad = gluNewQuadric();
+    glPushMatrix();
+    glTranslatef(0.0f, -trunkHeight / 2.0f, 0.0f);
+    gluCylinder(quad, trunkRadius, trunkRadius, trunkHeight, 30, 30);
+    glPopMatrix();
 
-void drawPolygon(float size) {
-    glutSolidDodecahedron();
+    // Draw foliage (stack of cones)
+    for (int i = 0; i < treeSegments; i++) {
+        glPushMatrix();
+        glTranslatef(0.0f, trunkHeight + i * foliageHeight / 2.5f, 0.0f);
+        glutSolidCone(foliageRadius - i * 0.2f, foliageHeight, 30, 30);
+        glPopMatrix();
+    }
+
+    gluDeleteQuadric(quad);
 }
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-    
+
+    glTranslatef(0.0f, -1.0f, -6.0f);
+    glRotatef(angle, 0.0f, 1.0f, 0.0f);
+
     glBindTexture(GL_TEXTURE_2D, texture);
-    
-    for (int i = 0; i < numPolygons; i++) {
-        glPushMatrix();
-        glTranslatef(polygons[i].x, polygons[i].y, polygons[i].z);
-        glRotatef(angle * polygons[i].rotationSpeed, 1.0f, 1.0f, 1.0f);
-        glScalef(polygons[i].size, polygons[i].size, polygons[i].size);
-        drawPolygon(polygons[i].size);
-        glPopMatrix();
-    }
+    drawTree();
     
     glutSwapBuffers();
 }
 
 void update(int value) {
-    angle += 2.0f;
+    angle += 1.0f;
     if (angle > 360) {
         angle -= 360;
     }
@@ -110,12 +109,11 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("Ray Traced Polygon Scene Benchmark");
+    glutCreateWindow("Rotating High Poly Tree with Ray Traced Lighting");
 
     glEnable(GL_DEPTH_TEST);
     initRayTracedLighting();
     initTexture();
-    generatePolygons();
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
