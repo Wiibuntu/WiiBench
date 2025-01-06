@@ -2,8 +2,35 @@
 #include <math.h>
 
 float angle = 0.0f;
-float cubePosX = 0.0f, cubePosY = 0.0f;
-float cubeSpeedX = 0.03f, cubeSpeedY = 0.02f;
+float spherePosX = 0.0f, spherePosY = 0.0f;
+float sphereSpeedX = 0.03f, sphereSpeedY = 0.02f;
+GLuint texture;
+
+const int checkImageWidth = 64;
+const int checkImageHeight = 64;
+GLubyte checkImage[checkImageHeight][checkImageWidth][4];
+
+void makeCheckImage(void) {
+    for (int i = 0; i < checkImageHeight; i++) {
+        for (int j = 0; j < checkImageWidth; j++) {
+            int c = ((((i & 8) == 0) ^ ((j & 8) == 0))) * 255;
+            checkImage[i][j][0] = (GLubyte)c;
+            checkImage[i][j][1] = (GLubyte)c;
+            checkImage[i][j][2] = (GLubyte)c;
+            checkImage[i][j][3] = (GLubyte)255;
+        }
+    }
+}
+
+void initTexture() {
+    makeCheckImage();
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, checkImageWidth, checkImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, checkImage);
+    glEnable(GL_TEXTURE_2D);
+}
 
 void initLighting() {
     GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
@@ -18,18 +45,22 @@ void initLighting() {
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 }
 
-void drawCube() {
-    glutSolidCube(1.0);
+void drawSphere() {
+    GLUquadric* quadric = gluNewQuadric();
+    gluQuadricTexture(quadric, GL_TRUE);
+    gluSphere(quadric, 1.0, 64, 64);
+    gluDeleteQuadric(quadric);
 }
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
     
-    glTranslatef(cubePosX, cubePosY, -5.0f);
+    glTranslatef(spherePosX, spherePosY, -5.0f);
     glRotatef(angle, 1.0f, 1.0f, 1.0f);
     
-    drawCube();
+    glBindTexture(GL_TEXTURE_2D, texture);
+    drawSphere();
 
     glutSwapBuffers();
 }
@@ -40,14 +71,14 @@ void update(int value) {
         angle -= 360;
     }
     
-    cubePosX += cubeSpeedX;
-    cubePosY += cubeSpeedY;
+    spherePosX += sphereSpeedX;
+    spherePosY += sphereSpeedY;
     
-    if (cubePosX > 2.0f || cubePosX < -2.0f) {
-        cubeSpeedX = -cubeSpeedX;
+    if (spherePosX > 2.0f || spherePosX < -2.0f) {
+        sphereSpeedX = -sphereSpeedX;
     }
-    if (cubePosY > 2.0f || cubePosY < -2.0f) {
-        cubeSpeedY = -cubeSpeedY;
+    if (spherePosY > 2.0f || spherePosY < -2.0f) {
+        sphereSpeedY = -sphereSpeedY;
     }
 
     glutPostRedisplay();
@@ -66,10 +97,11 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("Cube Benchmark");
+    glutCreateWindow("Sphere Benchmark with Checkerboard Texture");
 
     glEnable(GL_DEPTH_TEST);
     initLighting();
+    initTexture();
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
