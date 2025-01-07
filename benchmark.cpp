@@ -30,23 +30,23 @@ int main(int argc, char *argv[]) {
     gtk_box_pack_start(GTK_BOX(vbox), label, TRUE, TRUE, 0);
 
     button1 = gtk_button_new_with_label("Sphere");
-    g_signal_connect(button1, "clicked", G_CALLBACK(on_button_clicked), "./opt/WiiBench-Apps/Sphere");
+    g_signal_connect(button1, "clicked", G_CALLBACK(on_button_clicked), "/opt/WiiBench-Apps/Sphere");
     gtk_box_pack_start(GTK_BOX(vbox), button1, TRUE, TRUE, 0);
 
     button2 = gtk_button_new_with_label("Cube");
-    g_signal_connect(button2, "clicked", G_CALLBACK(on_button_clicked), "./opt/WiiBench-Apps/Cube");
+    g_signal_connect(button2, "clicked", G_CALLBACK(on_button_clicked), "/opt/WiiBench-Apps/Cube");
     gtk_box_pack_start(GTK_BOX(vbox), button2, TRUE, TRUE, 0);
 
     button3 = gtk_button_new_with_label("Polygon");
-    g_signal_connect(button3, "clicked", G_CALLBACK(on_button_clicked), "./opt/WiiBench-Apps/Polygon");
+    g_signal_connect(button3, "clicked", G_CALLBACK(on_button_clicked), "/opt/WiiBench-Apps/Polygon");
     gtk_box_pack_start(GTK_BOX(vbox), button3, TRUE, TRUE, 0);
 
     button4 = gtk_button_new_with_label("Tree");
-    g_signal_connect(button4, "clicked", G_CALLBACK(on_button_clicked), "./opt/WiiBench-Apps/Tree");
+    g_signal_connect(button4, "clicked", G_CALLBACK(on_button_clicked), "/opt/WiiBench-Apps/Tree");
     gtk_box_pack_start(GTK_BOX(vbox), button4, TRUE, TRUE, 0);
 
     button5 = gtk_button_new_with_label("CraftWorld");
-    g_signal_connect(button5, "clicked", G_CALLBACK(on_button_clicked), "./opt/WiiBench-Apps/CraftWorld");
+    g_signal_connect(button5, "clicked", G_CALLBACK(on_button_clicked), "/opt/WiiBench-Apps/CraftWorld");
     gtk_box_pack_start(GTK_BOX(vbox), button5, TRUE, TRUE, 0);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
